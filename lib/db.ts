@@ -1,5 +1,6 @@
 import { Pool, type QueryResultRow } from "pg";
 import { attachDatabasePool } from "@vercel/functions";
+import { connection } from "next/server";
 
 let pool: Pool | null = null;
 let schemaReady: Promise<void> | null = null;
@@ -76,6 +77,9 @@ function ensureSchema() {
 }
 
 export async function query<T extends QueryResultRow>(text: string, params: unknown[] = []) {
+  // Keeps queries out of `next build`: any page that reads the database is
+  // rendered per request, never prerendered with build-time data.
+  await connection();
   await ensureSchema();
   const { rows } = await getPool().query<T>(text, params);
   return rows;

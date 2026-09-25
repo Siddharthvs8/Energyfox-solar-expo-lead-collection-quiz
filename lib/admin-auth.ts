@@ -46,9 +46,10 @@ export async function endAdminSession() {
 }
 
 export async function isAdmin() {
-  if (!isAdminConfigured()) return false;
+  // Read the cookie first so admin routes are always rendered per request,
+  // even when ADMIN_PASSWORD is unset at build time.
   const value = (await cookies()).get(COOKIE)?.value;
-  if (!value) return false;
+  if (!value || !isAdminConfigured()) return false;
   const [expiresRaw, signature] = value.split(".");
   const expires = Number(expiresRaw);
   if (!Number.isFinite(expires) || expires < Date.now() / 1000 || !signature) return false;
