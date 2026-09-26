@@ -3,8 +3,9 @@ import { query, type Lead } from "@/lib/db";
 import { formatFullDateTime, TIME_ZONE } from "@/lib/format";
 import { leadWhere, readLeadFilters } from "@/lib/lead-filters";
 import { formatPhone } from "@/lib/phone";
+import { prizeLabel } from "@/lib/prizes";
 
-type ExportRow = Pick<Lead, "name" | "phone" | "score" | "discount" | "status" | "coupon" | "created_at" | "completed_at"> & {
+type ExportRow = Pick<Lead, "name" | "phone" | "prize" | "discount" | "status" | "coupon" | "created_at" | "completed_at"> & {
   campaign_name: string | null;
 };
 
@@ -21,7 +22,7 @@ export async function GET(request: Request) {
   const filters = readLeadFilters(Object.fromEntries(new URL(request.url).searchParams));
   const { where, params } = leadWhere(filters);
   const rows = await query<ExportRow>(
-    `SELECT l.name, l.phone, l.score, l.discount, l.status, l.coupon, l.created_at, l.completed_at,
+    `SELECT l.name, l.phone, l.prize, l.discount, l.status, l.coupon, l.created_at, l.completed_at,
             c.name AS campaign_name
        FROM leads l LEFT JOIN campaigns c ON c.id = l.campaign_id
        ${where}
@@ -32,22 +33,22 @@ export async function GET(request: Request) {
   const header = [
     "Name",
     "Mobile",
-    "Score",
+    "Prize",
     "Discount (%)",
     "Status",
     "Coupon",
     "QR code",
     `Registered (${TIME_ZONE})`,
-    `Completed (${TIME_ZONE})`,
+    `Spun (${TIME_ZONE})`,
   ];
   const lines = rows.map((r) =>
     [
       r.name,
       // Spaces keep Excel from turning the number into 9.19877E+11.
       formatPhone(r.phone).replace(/^\+/, ""),
-      r.status === "completed" ? r.score : null,
+      r.status === "completed" ? prizeLabel(r.discount, r.prize) : null,
       r.status === "completed" ? r.discount : null,
-      r.status === "completed" ? "Completed" : "In progress",
+      r.status === "completed" ? "Spun" : "Not spun yet",
       r.coupon,
       r.campaign_name,
       formatFullDateTime(r.created_at),

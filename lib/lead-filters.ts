@@ -1,10 +1,9 @@
-import { PRIZES } from "./prizes";
+import { SOLAR_DISCOUNTS } from "./prizes";
 
 export const REWARD_FILTERS = [
   { value: "", label: "All" },
-  ...PRIZES.map((p) => ({ value: String(p.discount), label: `${p.discount}% off` })),
-  { value: "0", label: "0%" },
-  { value: "playing", label: "In progress" },
+  ...SOLAR_DISCOUNTS.map((d) => ({ value: String(d), label: `${d}% off` })),
+  { value: "pending", label: "Not spun yet" },
 ];
 
 export type LeadFilters = { q: string; reward: string };
@@ -36,8 +35,8 @@ export function leadWhere({ q, reward }: LeadFilters) {
     conditions.push(`(${search.join(" OR ")})`);
   }
 
-  if (reward === "playing") {
-    conditions.push("l.status = 'playing'");
+  if (reward === "pending") {
+    conditions.push("l.status <> 'completed'");
   } else if (reward) {
     params.push(Number(reward));
     conditions.push(`l.status = 'completed' AND l.discount = $${params.length}`);

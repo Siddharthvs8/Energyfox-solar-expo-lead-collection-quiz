@@ -3,11 +3,11 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { query, type Lead } from "@/lib/db";
-import { completeIfFinished } from "@/lib/leads";
 import { normalizeMobile } from "@/lib/phone";
 import { getCurrentLead, PLAYER_COOKIE, PLAYER_COOKIE_OPTIONS } from "@/lib/player";
-import { correctAnswers, getQuestion, isCorrect, isMultiple, pickQuestionIds, toChoice } from "@/lib/quiz";
+import type { PrizeId } from "@/lib/prizes";
 import { randomToken } from "@/lib/random";
+import { spinForLead } from "@/lib/spin";
 
 export type RegisterState = {
   error?: string;
@@ -40,16 +40,16 @@ export async function register(
   }
 
   const [created] = await query<Pick<Lead, "token">>(
-    `INSERT INTO leads (token, name, phone, phone_key, campaign_id, question_ids)
-     VALUES ($1, $2, $3, $4, $5, $6::jsonb)
+    `INSERT INTO leads (token, name, phone, phone_key, campaign_id, status)
+     VALUES ($1, $2, $3, $4, $5, 'registered')
      ON CONFLICT (phone_key) DO NOTHING
      RETURNING token`,
-    [randomToken(), name, `+91${mobile}`, mobile, campaign.id, JSON.stringify(pickQuestionIds())],
+    [randomToken(), name, `+91${mobile}`, mobile, campaign.id],
   );
 
   let token = created?.token;
   if (!token) {
-    // One entry per mobile number.
+    // One spin per mobile number.
     const [existing] = await query<Pick<Lead, "token" | "status" | "discount">>(
       "SELECT token, status, discount FROM leads WHERE phone_key = $1",
       [mobile],
@@ -59,17 +59,17 @@ export async function register(
       return {
         error:
           existing.discount > 0
-            ? `This number has already played and unlocked ${existing.discount}% off. Each mobile number can play only once.`
-            : "This number has already played. Each mobile number can play only once.",
+            ? `This number has already spun and won ${existing.discount}% off. Each mobile number gets one spin.`
+            : "This number has already taken part. Each mobile number gets one spin.",
         values,
       };
     }
-    // Unfinished quiz (e.g. they switched phones): pick up where they left off.
+    // Registered but never spun (e.g. they switched phones): let them spin now.
     token = existing.token;
   }
 
   (await cookies()).set(PLAYER_COOKIE, token, PLAYER_COOKIE_OPTIONS);
-  redirect("/quiz");
+  redirect("/spin");
 }
 
 /** "Not you?": forget this browser's player so someone else can register on it. */
@@ -78,50 +78,16 @@ export async function switchPlayer(code: string) {
   redirect(`/play/${encodeURIComponent(code)}`);
 }
 
-export type AnswerResult =
-  | { ok: true; choice: number[]; correct: boolean; answer: number[]; fact?: string; finished: boolean }
+export type SpinResult =
+  | { ok: true; prize: PrizeId; discount: number; coupon: string | null }
   | { ok: false; error: string };
 
-/** `choice` holds the picked option indexes (one, or several for "select all that apply"). */
-export async function submitAnswer(questionId: string, choice: number[]): Promise<AnswerResult> {
+/** The server decides the prize; the wheel then animates to it. */
+export async function spinWheel(): Promise<SpinResult> {
   const lead = await getCurrentLead();
   if (!lead) return { ok: false, error: "Your session has expired. Please scan the QR code again." };
 
-  const question = getQuestion(questionId);
-  if (!question || !lead.question_ids.includes(questionId)) {
-    return { ok: false, error: "That question isn't part of your quiz." };
-  }
-  const picked = Array.isArray(choice) ? [...new Set(choice)].sort((a, b) => a - b) : [];
-  const valid =
-    picked.length > 0 &&
-    (isMultiple(question) || picked.length === 1) &&
-    picked.every((i) => Number.isInteger(i) && i >= 0 && i < question.options.length);
-  if (!valid) return { ok: false, error: "Please choose one of the options." };
-
-  // The first answer is final: the WHERE clause refuses to overwrite it.
-  const [updated] = await query<Pick<Lead, "answers">>(
-    `UPDATE leads
-        SET answers = answers || jsonb_build_object($2::text, $3::jsonb)
-      WHERE id = $1 AND status = 'playing' AND (answers -> $2::text) IS NULL
-      RETURNING answers`,
-    [lead.id, questionId, JSON.stringify(picked)],
-  );
-
-  let answers = updated?.answers;
-  if (!answers) {
-    const [fresh] = await query<Pick<Lead, "answers">>("SELECT answers FROM leads WHERE id = $1", [lead.id]);
-    answers = fresh?.answers ?? {};
-  }
-  const stored = answers[questionId];
-  if (stored === undefined) return { ok: false, error: "Something went wrong. Please try again." };
-
-  const finished = await completeIfFinished(lead, answers);
-  return {
-    ok: true,
-    choice: toChoice(stored),
-    correct: isCorrect(question, stored),
-    answer: correctAnswers(question),
-    fact: question.fact,
-    finished,
-  };
+  const spun = await spinForLead(lead);
+  if (!spun.prize) return { ok: false, error: "You've already taken part. Your reward is on the next screen." };
+  return { ok: true, prize: spun.prize, discount: spun.discount, coupon: spun.coupon };
 }

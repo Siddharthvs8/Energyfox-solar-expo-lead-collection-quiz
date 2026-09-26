@@ -2,10 +2,10 @@ import Link from "next/link";
 import { ArrowRight, Gift, QrCode, Trophy } from "lucide-react";
 import { switchPlayer } from "@/app/actions";
 import { PlayerShell } from "@/components/player-shell";
-import { PrizeLadder } from "@/components/prize-ladder";
+import { PrizeWheel } from "@/components/prize-wheel";
 import { query, type Campaign } from "@/lib/db";
 import { getCurrentLead } from "@/lib/player";
-import { MAX_DISCOUNT, QUESTIONS_PER_QUIZ } from "@/lib/prizes";
+import { MAX_SOLAR_DISCOUNT } from "@/lib/prizes";
 import { RegisterForm } from "./register-form";
 
 export default async function PlayPage({ params }: PageProps<"/play/[code]">) {
@@ -50,21 +50,21 @@ export default async function PlayPage({ params }: PageProps<"/play/[code]">) {
             <p className="mt-2 text-white/70">
               {done
                 ? lead.discount > 0
-                  ? `You've already played and unlocked ${lead.discount}% off.`
-                  : "You've already played the Energyfox Solar Quiz."
-                : "Your quiz is waiting for you. Pick up where you left off."}
+                  ? `You've already spun and won ${lead.discount}% off.`
+                  : "You've already taken part."
+                : "Your free spin is waiting for you."}
             </p>
             <Link
-              href={done ? "/result" : "/quiz"}
+              href={done ? "/result" : "/spin"}
               className="btn-sun mt-6 flex h-14 items-center justify-center gap-2 rounded-2xl text-lg font-semibold transition"
             >
-              {done ? "View my reward" : "Continue quiz"}
+              {done ? "View my reward" : "Spin the wheel"}
               <ArrowRight className="size-5" />
             </Link>
           </div>
           <form action={switchPlayer.bind(null, code)} className="mt-5 text-center">
             <button className="text-sm text-white/60 underline decoration-white/30 underline-offset-4 hover:text-white">
-              Not {firstName}? Play with a different number
+              Not {firstName}? Register a different number
             </button>
           </form>
         </section>
@@ -75,26 +75,28 @@ export default async function PlayPage({ params }: PageProps<"/play/[code]">) {
   return (
     <PlayerShell
       headerRight={
-        <span className="glass rounded-full px-3 py-1.5 text-xs font-semibold text-sun-200">☀️ Solar Quiz</span>
+        <span className="glass rounded-full px-3 py-1.5 text-xs font-semibold text-sun-200">🎡 Spin &amp; Win</span>
       }
     >
-      <section className="pt-8 pb-6">
-        <h1 className="animate-fade-up font-display text-[2.6rem] leading-[1.05] font-bold tracking-tight">
-          Answer {QUESTIONS_PER_QUIZ}.
+      <section className="pt-7 pb-7 text-center">
+        <div className="mx-auto w-[64%] max-w-[16rem] animate-fade-up">
+          <PrizeWheel />
+        </div>
+        <h1 className="mt-9 animate-fade-up font-display text-[2.4rem] leading-[1.04] font-bold tracking-tight [animation-delay:80ms]">
+          Spin the wheel.
           <br />
-          Win up to <span className="text-sun-gradient">{MAX_DISCOUNT}% off.</span>
+          Win up to <span className="text-sun-gradient">{MAX_SOLAR_DISCOUNT}% off.</span>
         </h1>
-        <p className="mt-4 animate-fade-up text-[1.05rem] text-white/75 [animation-delay:80ms]">
-          Take our 60-second solar quiz and unlock an instant discount on your Energyfox solar system.
+        <p className="mx-auto mt-3.5 max-w-sm animate-fade-up text-[1.02rem] text-white/75 [animation-delay:160ms]">
+          Register for your free spin and unlock an instant discount on your Energyfox solar project.
         </p>
-        <PrizeLadder className="mt-6 animate-fade-up [animation-delay:160ms]" />
       </section>
 
       <section className="animate-fade-up [animation-delay:240ms]">
         <RegisterForm code={code} />
         <p className="mt-4 px-2 text-center text-xs leading-relaxed text-white/50">
-          One entry per mobile number. By continuing, you agree that Energyfox may contact you about
-          solar offers.
+          One spin per mobile number. By continuing, you agree that Energyfox may contact you about solar
+          offers.
         </p>
       </section>
     </PlayerShell>

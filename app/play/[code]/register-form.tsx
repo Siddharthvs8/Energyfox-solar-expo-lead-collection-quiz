@@ -68,11 +68,11 @@ export function RegisterForm({ code }: { code: string }) {
         {pending ? (
           <>
             <LoaderCircle className="size-5 animate-spin" />
-            Getting your questions…
+            Getting your wheel ready…
           </>
         ) : (
           <>
-            Start the quiz
+            Continue to spin
             <ArrowRight className="size-5 transition-transform group-hover:translate-x-1" />
           </>
         )}

@@ -31,6 +31,17 @@
   --animate-shimmer: shimmer 2.4s linear infinite;
   --animate-rise: rise 12s linear infinite;
   --animate-fade-up: fade-up 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-sheen: sheen 3.2s ease-in-out infinite;
+
+  @keyframes sheen {
+    0% {
+      transform: translateX(-120%) skewX(-20deg);
+    }
+    55%,
+    100% {
+      transform: translateX(420%) skewX(-20deg);
+    }
+  }
 
   @keyframes fade-up {
     from {
@@ -136,6 +147,64 @@ body {
       inset 0 1px 0 rgb(255 255 255 / 0.08);
     backdrop-filter: blur(18px);
     -webkit-backdrop-filter: blur(18px);
+  }
+}
+
+/* Prize wheel lights and win state (see components/prize-wheel.tsx). */
+.wheel-bulb {
+  animation: bulb-chase 1.4s ease-in-out infinite;
+}
+.wheel-bulb:nth-of-type(even) {
+  animation-delay: -0.7s;
+}
+[data-state="spinning"] .wheel-bulb {
+  animation-duration: 0.36s;
+}
+[data-state="spinning"] .wheel-bulb:nth-of-type(even) {
+  animation-delay: -0.18s;
+}
+[data-state="won"] .wheel-bulb {
+  animation: bulb-flash 0.5s steps(1) infinite;
+}
+.wheel-dim {
+  animation: fade-to 0.6s ease-out forwards;
+  --fade-to: 0.55;
+}
+.wheel-win {
+  animation: win-pulse 1.1s ease-in-out infinite;
+}
+@keyframes bulb-chase {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.2;
+  }
+}
+@keyframes bulb-flash {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+@keyframes fade-to {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: var(--fade-to);
+  }
+}
+@keyframes win-pulse {
+  0%,
+  100% {
+    fill-opacity: 0.06;
+  }
+  50% {
+    fill-opacity: 0.3;
   }
 }
 

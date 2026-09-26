@@ -5,14 +5,13 @@ import { query, type Lead } from "@/lib/db";
 import { formatDateTime, formatNumber } from "@/lib/format";
 import { filtersToQuery, leadWhere, readLeadFilters, REWARD_FILTERS } from "@/lib/lead-filters";
 import { formatPhone } from "@/lib/phone";
-import { QUESTIONS_PER_QUIZ } from "@/lib/prizes";
 import { DeleteLeadButton } from "./delete-lead-button";
 
 export const metadata = { title: "Leads" };
 
 const PAGE_SIZE = 25;
 
-type LeadRow = Omit<Lead, "token" | "question_ids" | "answers"> & { campaign_name: string | null };
+type LeadRow = Omit<Lead, "token"> & { campaign_name: string | null };
 
 export default async function LeadsPage({ searchParams }: PageProps<"/admin/leads">) {
   const params = await searchParams;
@@ -23,7 +22,7 @@ export default async function LeadsPage({ searchParams }: PageProps<"/admin/lead
   const [[{ total }], leads] = await Promise.all([
     query<{ total: number }>(`SELECT count(*)::int AS total FROM leads l ${where}`, sqlParams),
     query<LeadRow>(
-      `SELECT l.id, l.name, l.phone, l.phone_key, l.campaign_id, l.score, l.discount, l.status, l.coupon,
+      `SELECT l.id, l.name, l.phone, l.phone_key, l.campaign_id, l.prize, l.discount, l.status, l.coupon,
               l.created_at, l.completed_at, c.name AS campaign_name
          FROM leads l LEFT JOIN campaigns c ON c.id = l.campaign_id
          ${where}
@@ -92,7 +91,6 @@ export default async function LeadsPage({ searchParams }: PageProps<"/admin/lead
               <thead className="bg-navy-50/60">
                 <tr className="text-left text-xs text-navy-400">
                   <th className="px-5 py-3 font-semibold">Lead</th>
-                  <th className="px-3 py-3 font-semibold">Score</th>
                   <th className="px-3 py-3 font-semibold">Reward</th>
                   <th className="px-3 py-3 font-semibold">Coupon</th>
                   <th className="px-3 py-3 font-semibold">QR code</th>
@@ -108,9 +106,6 @@ export default async function LeadsPage({ searchParams }: PageProps<"/admin/lead
                     <td className="px-5 py-3">
                       <p className="font-semibold text-navy-900">{lead.name}</p>
                       <p className="text-xs text-navy-500 tabular-nums">{formatPhone(lead.phone)}</p>
-                    </td>
-                    <td className="px-3 py-3 text-navy-700 tabular-nums">
-                      {lead.status === "completed" ? `${lead.score}/${QUESTIONS_PER_QUIZ}` : "–"}
                     </td>
                     <td className="px-3 py-3">
                       <DiscountBadge discount={lead.discount} status={lead.status} />
@@ -182,7 +177,7 @@ function whatsappLink(lead: Pick<LeadRow, "name" | "phone" | "discount" | "coupo
   const firstName = lead.name.split(" ")[0];
   const reward =
     lead.status === "completed" && lead.discount > 0
-      ? ` You unlocked ${lead.discount}% off${lead.coupon ? ` (code ${lead.coupon})` : ""}.`
+      ? ` You won ${lead.discount}% off your solar project${lead.coupon ? ` (code ${lead.coupon})` : ""}.`
       : "";
   const text = `Hi ${firstName}, thanks for visiting Energyfox at the Solar Expo!${reward} When would be a good time to talk about solar for your home?`;
   return `https://wa.me/${lead.phone.replace(/\D/g, "")}?text=${encodeURIComponent(text)}`;

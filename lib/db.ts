@@ -1,6 +1,7 @@
 import { Pool, type QueryResultRow } from "pg";
 import { attachDatabasePool } from "@vercel/functions";
 import { connection } from "next/server";
+import type { PrizeId } from "./prizes";
 
 let pool: Pool | null = null;
 let schemaReady: Promise<void> | null = null;
@@ -38,15 +39,26 @@ const SCHEMA = `
     phone         TEXT NOT NULL,
     phone_key     TEXT NOT NULL UNIQUE,
     campaign_id   INTEGER REFERENCES campaigns(id) ON DELETE SET NULL,
-    question_ids  JSONB NOT NULL,
-    answers       JSONB NOT NULL DEFAULT '{}'::jsonb,
-    score         INTEGER NOT NULL DEFAULT 0,
+    prize         TEXT,
     discount      INTEGER NOT NULL DEFAULT 0,
-    status        TEXT NOT NULL DEFAULT 'playing',
+    status        TEXT NOT NULL DEFAULT 'registered',
     coupon        TEXT UNIQUE,
     created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
     completed_at  TIMESTAMPTZ
   );
+
+  -- Upgrade databases created by the earlier quiz version without losing data:
+  -- add the prize column and stop requiring the quiz-only question list.
+  ALTER TABLE leads ADD COLUMN IF NOT EXISTS prize TEXT;
+  DO $$ BEGIN
+    IF EXISTS (
+      SELECT 1 FROM information_schema.columns
+       WHERE table_schema = current_schema() AND table_name = 'leads'
+         AND column_name = 'question_ids' AND is_nullable = 'NO'
+    ) THEN
+      ALTER TABLE leads ALTER COLUMN question_ids DROP NOT NULL;
+    END IF;
+  END $$;
 
   CREATE INDEX IF NOT EXISTS leads_created_at_idx ON leads (created_at DESC);
 `;
@@ -101,12 +113,11 @@ export type Lead = {
   phone: string;
   phone_key: string;
   campaign_id: number | null;
-  question_ids: string[];
-  /** Question id → chosen option indexes. */
-  answers: Record<string, number | number[]>;
-  score: number;
+  /** Null until the wheel is spun (and on leads from the earlier quiz version). */
+  prize: PrizeId | null;
   discount: number;
-  status: "playing" | "completed";
+  /** "completed" once the wheel has been spun. Anything else means not spun yet. */
+  status: "registered" | "completed";
   coupon: string | null;
   created_at: Date;
   completed_at: Date | null;

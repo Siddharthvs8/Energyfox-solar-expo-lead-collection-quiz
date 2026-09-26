@@ -14,8 +14,8 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "Energyfox Solar Quiz",
-  description: "Answer 5 quick solar questions and win up to 15% off your Energyfox solar system.",
+  title: "Energyfox Spin & Win",
+  description: "Spin the Energyfox wheel and win up to 15% off your solar project.",
 };
 
 export const viewport: Viewport = {

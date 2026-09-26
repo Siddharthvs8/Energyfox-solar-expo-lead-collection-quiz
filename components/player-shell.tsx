@@ -11,7 +11,7 @@ export function PlayerShell({
   headerRight?: React.ReactNode;
 }) {
   return (
-    <main className="relative isolate min-h-dvh text-white">
+    <main className="relative isolate min-h-dvh overflow-x-clip text-white">
       <SunBackdrop />
       <div className="mx-auto flex min-h-dvh w-full max-w-lg flex-col px-5 pt-[max(env(safe-area-inset-top),1.25rem)] pb-[max(env(safe-area-inset-bottom),1.5rem)]">
         <header className="flex items-center justify-between py-2">

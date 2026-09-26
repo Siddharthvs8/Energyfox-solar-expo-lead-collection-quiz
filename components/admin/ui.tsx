@@ -55,11 +55,11 @@ const DISCOUNT_STYLES: Record<number, string> = {
   0: "bg-navy-100 text-navy-600",
 };
 
-export function DiscountBadge({ discount, status }: { discount: number; status: "playing" | "completed" }) {
-  if (status === "playing") {
+export function DiscountBadge({ discount, status }: { discount: number; status: string }) {
+  if (status !== "completed") {
     return (
       <span className="inline-flex items-center rounded-full border border-dashed border-navy-300 px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap text-navy-500">
-        In progress
+        Not spun yet
       </span>
     );
   }

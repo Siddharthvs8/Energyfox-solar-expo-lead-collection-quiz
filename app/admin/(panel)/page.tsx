@@ -4,11 +4,11 @@ import { buttonStyles, Card, CardHeader, DiscountBadge, PageHeader, StatTile } f
 import { query, type Lead } from "@/lib/db";
 import { formatNumber, timeAgo, TIME_ZONE } from "@/lib/format";
 import { formatPhone } from "@/lib/phone";
-import { PRIZES, QUESTIONS_PER_QUIZ } from "@/lib/prizes";
+import { SOLAR_DISCOUNTS } from "@/lib/prizes";
 
 export const metadata = { title: "Dashboard" };
 
-type Stats = { leads: number; completed: number; today: number; winners: number; avg_score: number | null };
+type Stats = { leads: number; completed: number; today: number; avg_discount: number | null };
 type CampaignPerf = { id: number; name: string; active: boolean; scans: number; leads: number };
 
 const pct = (part: number, whole: number) => (whole > 0 ? Math.round((part / whole) * 100) : 0);
@@ -19,8 +19,7 @@ export default async function DashboardPage() {
       `SELECT count(*)::int AS leads,
               count(*) FILTER (WHERE status = 'completed')::int AS completed,
               count(*) FILTER (WHERE created_at >= date_trunc('day', now() AT TIME ZONE $1) AT TIME ZONE $1)::int AS today,
-              count(*) FILTER (WHERE discount > 0)::int AS winners,
-              round(avg(score) FILTER (WHERE status = 'completed'), 1)::float AS avg_score
+              round(avg(discount) FILTER (WHERE status = 'completed'), 1)::float AS avg_discount
          FROM leads`,
       [TIME_ZONE],
     ),
@@ -39,16 +38,13 @@ export default async function DashboardPage() {
 
   const scans = campaigns.reduce((sum, c) => sum + c.scans, 0);
   const counts = new Map(distribution.map((d) => [d.discount, d.count]));
-  const bars = [
-    ...PRIZES.map((p) => ({ label: `${p.discount}% off`, hint: `${p.score}/${QUESTIONS_PER_QUIZ} correct`, value: counts.get(p.discount) ?? 0 })),
-    { label: "No discount", hint: `0–${PRIZES[PRIZES.length - 1].score - 1} correct`, value: counts.get(0) ?? 0 },
-  ];
+  const bars = SOLAR_DISCOUNTS.map((d) => ({ label: `${d}% off`, hint: "Solar project", value: counts.get(d) ?? 0 }));
 
   return (
     <>
       <PageHeader
         title="Dashboard"
-        description="Live results from the Energyfox Solar Quiz."
+        description="Live results from the Energyfox Spin & Win."
         actions={
           <>
             <a href="/admin/leads/export" className={buttonStyles.secondary}>
@@ -79,20 +75,20 @@ export default async function DashboardPage() {
         <StatTile label="Leads collected" value={formatNumber(stats.leads)} detail={`+${formatNumber(stats.today)} today`} />
         <StatTile label="QR scans" value={formatNumber(scans)} detail={`${pct(stats.leads, scans)}% registered`} />
         <StatTile
-          label="Quizzes completed"
+          label="Wheels spun"
           value={formatNumber(stats.completed)}
-          detail={`${pct(stats.completed, stats.leads)}% of leads finished`}
+          detail={`${pct(stats.completed, stats.leads)}% of leads spun`}
         />
         <StatTile
-          label="Won a discount"
-          value={formatNumber(stats.winners)}
-          detail={stats.avg_score === null ? "No results yet" : `Average score ${stats.avg_score}/${QUESTIONS_PER_QUIZ}`}
+          label="Average discount"
+          value={stats.avg_discount === null ? "–" : `${stats.avg_discount}%`}
+          detail={stats.avg_discount === null ? "No spins yet" : "Across all spins"}
         />
       </div>
 
       <div className="mt-4 grid gap-4 lg:mt-6 lg:grid-cols-5 lg:gap-6">
         <Card className="lg:col-span-3">
-          <CardHeader title="Discounts won" description="Completed quizzes by reward" />
+          <CardHeader title="Discounts won" description="Spins by prize" />
           <DiscountBars bars={bars} total={stats.completed} />
         </Card>
 
@@ -188,12 +184,12 @@ function DiscountBars({ bars, total }: { bars: { label: string; hint: string; va
               role="tooltip"
               className="pointer-events-none absolute -top-9 left-28 z-10 rounded-lg bg-navy-900 px-2.5 py-1.5 text-xs font-medium whitespace-nowrap text-white opacity-0 shadow-lg transition group-hover:opacity-100"
             >
-              {bar.label}: {formatNumber(bar.value)} {bar.value === 1 ? "person" : "people"} · {share}% of completed
+              {bar.label}: {formatNumber(bar.value)} {bar.value === 1 ? "person" : "people"} · {share}% of spins
             </span>
           </div>
         );
       })}
-      {total === 0 && <p className="text-center text-xs text-navy-400">No completed quizzes yet.</p>}
+      {total === 0 && <p className="text-center text-xs text-navy-400">No spins yet.</p>}
     </div>
   );
 }

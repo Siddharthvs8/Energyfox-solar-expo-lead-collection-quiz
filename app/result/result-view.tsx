@@ -3,19 +3,12 @@
 import { useEffect, useState } from "react";
 import { animate, motion, useReducedMotion } from "motion/react";
 import confetti from "canvas-confetti";
-import { Camera, Check, MapPin, PhoneCall, X } from "lucide-react";
+import { Camera, MapPin, PhoneCall } from "lucide-react";
 import { LogoMark } from "@/components/logo";
-import { PRIZES } from "@/lib/prizes";
 
 const BRAND_COLORS = ["#F99D1C", "#FFC65C", "#FFE3A8", "#FFFFFF", "#34D399"];
 const EASE = [0.2, 0.8, 0.2, 1] as const;
 
-const HEADLINES: Record<number, string> = {
-  15: "Solar genius, {name}! ☀️",
-  10: "Brilliant, {name}! ⚡",
-  5: "Nice work, {name}! 🌤️",
-  0: "Thanks for playing, {name}!",
-};
 
 // Half-circle cut-outs where the two halves of the ticket meet.
 const notch = (edge: "top" | "bottom") => {
@@ -27,18 +20,14 @@ const notch = (edge: "top" | "bottom") => {
 export function ResultView({
   name,
   phone,
-  score,
-  total,
-  outcomes,
   discount,
+  product,
   coupon,
 }: {
   name: string;
   phone: string;
-  score: number;
-  total: number;
-  outcomes: boolean[];
   discount: number;
+  product: string;
   coupon: string | null;
 }) {
   const reduceMotion = useReducedMotion();
@@ -46,7 +35,6 @@ export function ResultView({
   const shown = reduceMotion ? discount : counted;
   const firstName = name.split(" ")[0];
   const won = discount > 0;
-  const needed = PRIZES[PRIZES.length - 1].score;
 
   useEffect(() => {
     if (reduceMotion) return;
@@ -123,28 +111,17 @@ export function ResultView({
         transition={{ delay: 0.5, duration: 0.5, ease: EASE }}
       >
         <h1 className="font-display text-[1.75rem] leading-tight font-bold text-balance">
-          {(HEADLINES[discount] ?? HEADLINES[0]).replace("{name}", firstName)}
+          {won ? `Congratulations, ${firstName}! 🎉` : `Thanks for taking part, ${firstName}!`}
         </h1>
         <p className="mt-2 text-white/70">
-          You answered <strong className="text-white">{score}</strong> of {total} correctly
-          {!won && ` (${needed} were needed for a discount)`}.
+          {won ? (
+            <>
+              You won <strong className="text-white">{discount}% off</strong> your Energyfox {product}.
+            </>
+          ) : (
+            "Our solar experts will be in touch with the best offer for your home."
+          )}
         </p>
-        <ol className="mt-4 flex justify-center gap-2" aria-label="Your answers">
-          {outcomes.map((right, i) => (
-            <motion.li
-              key={i}
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 0.7 + i * 0.09, type: "spring", stiffness: 300, damping: 15 }}
-              className={`grid size-8 place-items-center rounded-full ${
-                right ? "bg-emerald-400 text-navy-900" : "bg-rose-400/90 text-navy-900"
-              }`}
-              aria-label={`Question ${i + 1}: ${right ? "correct" : "wrong"}`}
-            >
-              {right ? <Check className="size-4" strokeWidth={3.5} /> : <X className="size-4" strokeWidth={3.5} />}
-            </motion.li>
-          ))}
-        </ol>
       </motion.div>
 
       {/* Voucher */}
@@ -164,7 +141,7 @@ export function ResultView({
               <p className="mt-3 font-display text-5xl leading-none font-extrabold tracking-tight">
                 {discount}% <span className="text-sun-500">OFF</span>
               </p>
-              <p className="mt-2 text-sm font-medium text-navy-500">on your Energyfox solar system</p>
+              <p className="mt-2 text-sm font-medium text-navy-500">on your Energyfox {product}</p>
             </>
           ) : (
             <>
