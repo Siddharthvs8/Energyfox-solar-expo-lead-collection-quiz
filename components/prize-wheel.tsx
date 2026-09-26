@@ -5,7 +5,7 @@ import { motion, type MotionValue } from "motion/react";
 import { PRIZES, WHEEL, type PrizeId } from "@/lib/prizes";
 import { LogoMark } from "./logo";
 
-/** Replace this file with the real product photo (square works best). */
+/** FoxGrid unit cut out of the product photo (transparent PNG, square). */
 export const INVERTER_IMAGE = "/foxgrid-inverter.png";
 export const SLICE_ANGLE = 360 / WHEEL.length;
 
@@ -23,7 +23,7 @@ function point(r: number, deg: number) {
 // One slice pointing straight up; each slice is this shape rotated into place.
 const WEDGE = `M${C} ${C} L${point(R, -SLICE_ANGLE / 2)} A${R} ${R} 0 0 1 ${point(R, SLICE_ANGLE / 2)} Z`;
 
-type Ids = Record<"cream" | "sun" | "navy" | "silver" | "gold" | "rim" | "badge" | "bulb" | "ptr", string>;
+type Ids = Record<"cream" | "sun" | "navy" | "silver" | "gold" | "rim" | "shadow" | "spot" | "bulb" | "ptr", string>;
 
 const THEME: Record<PrizeId, { fill: keyof Ids; ink: string; sub: string }> = {
   solar5: { fill: "cream", ink: "#192649", sub: "#bb630c" },
@@ -54,7 +54,7 @@ export function PrizeWheel({
 }) {
   const uid = useId().replace(/[^a-zA-Z0-9]/g, "");
   const ids = Object.fromEntries(
-    ["cream", "sun", "navy", "silver", "gold", "rim", "badge", "bulb", "ptr"].map((k) => [k, `${uid}-${k}`]),
+    ["cream", "sun", "navy", "silver", "gold", "rim", "shadow", "spot", "bulb", "ptr"].map((k) => [k, `${uid}-${k}`]),
   ) as Ids;
   const url = (key: keyof Ids) => `url(#${ids[key]})`;
   const paint = (value: string) => (value in ids ? url(value as keyof Ids) : value);
@@ -134,9 +134,14 @@ export function PrizeWheel({
               <stop offset="0.5" stopColor="#fbb03a" />
               <stop offset="1" stopColor="#ffd98a" />
             </linearGradient>
-            <clipPath id={ids.badge}>
-              <circle cx={C} cy={C - 134} r={27} />
-            </clipPath>
+            <radialGradient id={ids.spot} cx="50%" cy="38%" r="65%">
+              <stop offset="0" stopColor="#3a4f96" />
+              <stop offset="0.6" stopColor="#1a2754" />
+              <stop offset="1" stopColor="#0b1128" />
+            </radialGradient>
+            <filter id={ids.shadow} x="-30%" y="-30%" width="160%" height="160%">
+              <feDropShadow dx="0" dy="2" stdDeviation="2" floodColor="#0b1230" floodOpacity="0.35" />
+            </filter>
           </defs>
 
           {WHEEL.map((id, i) => (
@@ -231,15 +236,16 @@ function SliceLabel({ id, ink, sub, ids, gold }: { id: PrizeId; ink: string; sub
   if (id === "inverter50") {
     return (
       <g>
-        <circle cx={C} cy={y(134)} r={31} fill="#ffffff" stroke={gold} strokeWidth={3.5} />
+        {/* Dark spotlight badge so the white unit stands out; the unit pops slightly out of it. */}
+        <circle cx={C} cy={y(132)} r={30} fill={`url(#${ids.spot})`} stroke={gold} strokeWidth={3.5} />
         <image
           href={INVERTER_IMAGE}
-          x={C - 25}
-          y={y(134) - 25}
-          width={50}
-          height={50}
+          x={C - 31}
+          y={y(132) - 32}
+          width={62}
+          height={62}
           preserveAspectRatio="xMidYMid meet"
-          clipPath={`url(#${ids.badge})`}
+          filter={`url(#${ids.shadow})`}
         />
         <text x={C} y={y(86)} textAnchor="middle" className="font-display" fontSize={16} fontWeight={800} fill={ink}>
           {prize.discount}% OFF

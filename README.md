@@ -2,7 +2,7 @@
 
 Lead-collection prize wheel for the Energyfox stall at solar expos. Visitors
 scan a QR code, register with their name and mobile number, and spin the wheel
-once to win 5%, 10% or 15% off their solar project. Each mobile number gets one
+once to win 5%, 10% or (rarely) 15% off their solar project. Each mobile number gets one
 spin. Every registration appears as a lead in the admin panel with the prize
 they won.
 
@@ -49,13 +49,13 @@ posters (or set `SITE_URL`).
 
 ## Customising
 
-- **Odds**: `lib/spin.ts` (`WEIGHTS`). The three solar discounts are equally
-  likely. The 50% FoxGrid inverter slice has weight 0, so it is shown on the
-  wheel but never won; give it a small weight to make it winnable.
+- **Odds**: `lib/spin.ts` (`WEIGHTS`, in percent): 5% off 50%, 10% off 45%,
+  15% off 5% (rare). The 50% FoxGrid inverter slice is 0, so it is shown on
+  the wheel but never won.
 - **Wheel slices and prize text**: `lib/prizes.ts`.
-- **FoxGrid inverter image**: replace `public/foxgrid-inverter.png` with the
-  product photo (square, transparent or white background). It sits in a white
-  circle on the inverter slice.
+- **FoxGrid inverter image**: `public/foxgrid-inverter.png`, a transparent
+  cut-out of the product photo. To swap it, use a square PNG with a
+  transparent background.
 - **Time zone** for admin screens and exports: `TIME_ZONE` env var (default `Asia/Kolkata`).
 - **Phone numbers**: Indian mobile numbers (`+91`, 10 digits); see `lib/phone.ts`.
 

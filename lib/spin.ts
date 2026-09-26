@@ -4,15 +4,14 @@ import { PRIZES, type PrizeId } from "./prizes";
 import { randomCode } from "./random";
 
 /**
- * Relative chance of each prize. Server-only, so the odds never reach the browser.
- * The FoxGrid inverter slice is on the wheel for show and is never awarded
- * (weight 0). Give it a small weight (e.g. 1 against 300 for the others) if
- * you want it to be winnable.
+ * Chance of each prize, in percent. Server-only, so the odds never reach the
+ * browser. 15% off is rare (about 1 spin in 20). The FoxGrid inverter slice is
+ * on the wheel for show and is never awarded (0).
  */
 const WEIGHTS: Record<PrizeId, number> = {
-  solar5: 1,
-  solar10: 1,
-  solar15: 1,
+  solar5: 50,
+  solar10: 45,
+  solar15: 5,
   inverter50: 0,
 };
 
